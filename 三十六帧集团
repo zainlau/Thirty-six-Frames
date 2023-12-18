@@ -1,0 +1,51 @@
+pip install opencv-python torch torchvision
+# 安装tensorrt需要根据官方文档进行，通常需要NVIDIA GPU支持
+# https://docs.nvidia.com/deeplearning/tensorrt/install-guide/index.html
+
+#include <iostream>
+#include <opencv2/opencv.hpp>
+#include <torch/script.h>
+#include <torch/torch.h>
+
+int main() {
+    // 加载 PyTorch 模型
+    torch::jit::script::Module model = torch::jit::load("your_model.pth");
+    model.eval();
+
+    // 使用 TensorRT 进行模型优化
+    // 请根据 TensorRT 的文档添加相关的优化步骤
+
+    // 打开摄像头
+    cv::VideoCapture cap(0);
+
+    if (!cap.isOpened()) {
+        std::cerr << "Error: Could not open camera." << std::endl;
+        return -1;
+    }
+
+    while (true) {
+        cv::Mat frame;
+        cap >> frame;
+
+        // 进行视频处理，例如图像预处理
+
+        // 将 OpenCV 的 Mat 转换为 PyTorch 的 Tensor
+        // 请根据你的模型和数据进行适当的预处理
+        torch::Tensor input_tensor = torch::from_blob(frame.data, {1, frame.rows, frame.cols, 3}, torch::kByte);
+        input_tensor = input_tensor.to(torch::kFloat);
+        input_tensor = input_tensor.permute({0, 3, 1, 2});
+
+        // 进行模型推理
+        at::Tensor output = model.forward({input_tensor}).toTensor();
+
+        // 处理模型输出，例如后处理
+
+        // 在窗口中显示处理后的图像
+        cv::imshow("Processed Video", frame);
+
+        if (cv::waitKey(1) == 27)  // ESC 键退出循环
+            break;
+    }
+
+    return 0;
+}
